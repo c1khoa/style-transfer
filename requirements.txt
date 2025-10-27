@@ -1,0 +1,29 @@
+# Deep Learning
+torch >= 2.0.0
+torchvision >= 0.15.0
+tensorflow >= 2.12.0  # (optional, nếu dùng)
+
+# Computer Vision
+opencv-python
+Pillow
+torchvision
+
+# Evaluation Metrics
+pytorch-fid
+lpips
+scikit-image
+
+# Visualization
+matplotlib
+seaborn
+plotly
+
+# Demo
+gradio >= 3.50.0      # Preferred for Colab
+# streamlit            # Alternative
+
+# Utils
+numpy
+pandas
+tqdm
+PyYAML
