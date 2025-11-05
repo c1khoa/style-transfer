@@ -138,9 +138,11 @@ Chỉ phần decoder và style module được huấn luyện lại để tối 
 
 **Deliverables**:
 
--   [ ] Notebook: `01_AdaIN_Implementation.ipynb`
--   [ ] Notebook: `02_AdaIN_Training.ipynb`
+-   [ ] Notebook: `01_AdaIN_Training.ipynb`
 -   [ ] Trained weights: `adain_model.pth`
+-   [ ] Script: `adain.py`, `main.py`, `infer.py`, `train_utils.py`
+-   [ ] Config: `adain_config.yaml`
+-   [ ] Results: github and drive
 -   [ ] `README.md` tổng hợp
 -   [ ] Báo cáo cuối kỳ
 
@@ -177,7 +179,6 @@ Chỉ phần decoder và style module được huấn luyện lại để tối 
 **Deliverables**:
 
 -   [ ] Notebook: `00_Data_Preparation.ipynb`
--   [ ] Notebook: `00_EDA_Analysis.ipynb`
 -   [ ] Script: `utils/data_utils.py`
 -   [ ] EDA report (markdown/PDF)
 
@@ -208,10 +209,12 @@ Chỉ phần decoder và style module được huấn luyện lại để tối 
 
 **Deliverables**:
 
--   [ ] Notebook: `03_SANet_Implementation.ipynb`
--   [ ] Notebook: `04_SANet_Training.ipynb`
+-   [ ] Notebook: `02_SANet_Training.ipynb`
 -   [ ] Trained weights: `sanet_model.pth`
--   [ ] Notebook: `05_Model_Comparison.ipynb`
+-   [ ] Script: `sanet.py`
+-   [ ] Notebook: `03_Model_Comparison.ipynb`
+-   [ ] Config: `sanet_config.yaml`
+-   [ ] Results: github and drive
 -   [ ] Comparison report
 
 ---
@@ -248,10 +251,10 @@ Chỉ phần decoder và style module được huấn luyện lại để tối 
 
 **Deliverables**:
 
--   [ ] Notebook: `06_Evaluation_Metrics.ipynb`
--   [ ] Notebook: `07_Results_Visualization.ipynb`
--   [ ] Notebook: `08_Demo_Application.ipynb`
--   [ ] Script: `eval_utils.py`
+-   [ ] Notebook: `04_Evaluation_Metrics.ipynb`
+-   [ ] Notebook: `05_Results_Visualization.ipynb`
+-   [ ] Notebook: `06_Demo_Application.ipynb`
+-   [ ] Script: `eval_utils.py`, `eval.py`
 -   [ ] Script: `viz_utils.py`
 -   [ ] Evaluation report với metrics
 -   [ ] Demo video/screenshots
@@ -332,7 +335,7 @@ Chỉ phần decoder và style module được huấn luyện lại để tối 
 │
 ├── 📁 04_Results/
 │   ├── 📁 AdaIN/
-│   │   ├── forest_vangogh/
+│   │   ├── pair_1/
 │   │   │   ├── content.jpg
 │   │   │   ├── style.jpg
 │   │   │   └── output.jpg
@@ -359,25 +362,33 @@ image-style-transfer/
 │
 ├── 📁 notebooks/                      # Nơi làm việc chính
 │   ├── 00_Data_Preparation.ipynb      ← Chuẩn bị dữ liệu (resize, normalize, pairs.csv)
-│   ├── 01_AdaIN_Implementation.ipynb  ← Cài đặt kiến trúc AdaIN
-│   ├── 02_AdaIN_Training.ipynb        ← Huấn luyện AdaIN
-│   ├── 03_SANet_Implementation.ipynb  ← Cài đặt kiến trúc SANet
-│   ├── 04_SANet_Training.ipynb        ← Huấn luyện SANet
-│   ├── 05_Model_Comparison.ipynb      ← So sánh output hai mô hình
-│   ├── 06_Evaluation_Metrics.ipynb    ← Tính LPIPS, SSIM, Style Loss,...
-│   ├── 07_Results_Visualization.ipynb ← Hiển thị kết quả trực quan
-│   └── 08_Demo_Application.ipynb      ← Giao diện demo chọn ảnh & xem kết quả
+│   ├── 01_AdaIN_Training.ipynb        ← Huấn luyện AdaIN
+│   ├── 02_SANet_Training.ipynb        ← Huấn luyện SANet
+│   ├── 03_Model_Comparison.ipynb      ← So sánh output hai mô hình
+│   ├── 04_Evaluation_Metrics.ipynb    ← Tính LPIPS, SSIM, Style Loss,...
+│   ├── 05_Results_Visualization.ipynb ← Hiển thị kết quả trực quan
+│   └── 06_Demo_Application.ipynb      ← Giao diện demo chọn ảnh & xem kết quả
 │
-├── 📁 scripts/                        # Python modules tách riêng để tái sử dụng
-│   └── utils/
-│       ├── data_utils.py              ← Hàm load ảnh, ghép cặp, xử lý dữ liệu
-│       ├── model_utils.py             ← Hàm load/save model, forward pass
-│       ├── eval_utils.py              ← Tính toán metrics (LPIPS, SSIM,...)
-│       └── viz_utils.py               ← Hàm plot attention maps, visualize style transfer
-│
-├── 📁 configs/                        # File cấu hình siêu tham số
-│   ├── adain_config.yaml              ← learning_rate, batch_size, content_weight,...
-│   └── sanet_config.yaml              ← thông số huấn luyện SANet
+├── 📁 src/
+│   ├── 📁 models/                      # Chứa toàn bộ kiến trúc mạng
+│   │   ├── adain.py                   ← Model AdaIN (encoder, decoder, AdaIN layer)
+│   │   ├── sanet.py                   ← Model SANet (Self-Attention Network)
+│   │   └── __init__.py
+│   │
+│   ├── 📁 utils/                       # Các hàm tiện ích
+│   │   ├── data_utils.py              ← Load ảnh, augmentation, ghép cặp
+│   │   ├── train_utils.py             ← Train loop helpers: save, load, EMA
+│   │   ├── eval_utils.py              ← LPIPS, SSIM, MS-SSIM, Gram loss
+│   │   └── viz_utils.py               ← Plot, visualize style transfer, attention map
+│   │
+│   ├── 📁 configs/                     # File cấu hình siêu tham số
+│   │   ├── adain_config.yaml          ← learning_rate, batch_size, content_weight,...
+│   │   └── sanet_config.yaml          ← thông số huấn luyện SANet
+│   │
+│   ├── train.py                       ← Entry point huấn luyện
+│   ├── infer.py                       ← Entry point inference
+│   ├── eval.py                        ← Entry point evaluation
+│   └── main.py                        ← Entry point chung cho dự án style transfer
 │
 ├── 📁 docs/                           # Tài liệu chi tiết (markdown)
 │   ├── data_preparation.md            ← Hướng dẫn xử lý & tổ chức dữ liệu

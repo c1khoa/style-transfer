@@ -1,0 +1,45 @@
+# Cấu hình cho AdaINet
+
+# --- DATA CONFIG ---
+DATA:
+  CONTENT_DIR: "../data/coco2017"
+  STYLE_DIR: "../data/wikiart_sampled"
+  
+  TRANSFORM:
+    TARGET_LONG: 512       # Cạnh lớn sau resize
+    MIN_SHORT: 256         # Cạnh nhỏ tối thiểu (dùng padding)
+    CROP_SIZE: 256         # Kích thước crop
+    GRAY_RATIO: 0.2        # Xác suất Grayscale
+  
+  DATALOADER:
+    BATCH_SIZE: 16
+    NUM_WORKERS: 32
+    PERSISTENT_WORKERS: False
+
+# --- MODEL & HARDWARE ---
+MODEL:
+  OUT_CHANNELS: 3
+  VGG_WEIGHTS_PATH: "../models/vgg16-encoder.pth"
+  DEVICE: "cuda" 
+
+# --- TRAINING CONFIG ---
+TRAINING:
+  OPTIMIZER: "Adam"
+  LEARNING_RATE: 1e-4 
+  NUM_EPOCHS: 30
+  
+  LOSS:
+    NAME: "AdaINLossMultiLayer"
+    ALPHA: 1.0             # Trọng số Content Loss
+    BETA: 0.5              # Trọng số Style Loss
+    EPSILON: 1e-5
+  
+  SAVE_DIR: "../checkpoints_adaln"
+
+# --- TESTING CONFIG ---
+TESTING:
+  CHECKPOINT_PATH: "../checkpoints_adaln/best_model.pth"
+  SAVE_DIR: "../results"
+  ALPHA_SAMPLES: [0.5, 1.0, 1.5]
+  CONTENT_TEST_DIR: "../data/coco2017/test"
+  STYLE_TEST_DIR: "../data/wikiart_sampled/test"
