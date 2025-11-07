@@ -5,6 +5,11 @@
 data/
 outputs/
 checkpoints/
+/Paper
+.venv
+.github
+.checkpoint
+
 # User-specific files
 *.rsuser
 *.suo
