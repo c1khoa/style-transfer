@@ -1,0 +1,53 @@
+# Cấu hình cho SANet
+
+# --- DATA CONFIG ---
+DATA:
+  CONTENT_DIR: "../data/coco2017"
+  STYLE_DIR: "../data/wikiart_sampled"
+  
+  TRANSFORM:
+    TARGET_LONG: 512       # Cạnh lớn sau resize
+    MIN_SHORT: 256         # Cạnh nhỏ tối thiểu (dùng padding)
+    CROP_SIZE: 256         # Kích thước crop
+    GRAY_RATIO: 0.0        # SANet không dùng grayscale
+    USE_NORMALIZE: False   # SANet không dùng ImageNet normalization
+  
+  DATALOADER:
+    BATCH_SIZE: 8
+    NUM_WORKERS: 2
+    PERSISTENT_WORKERS: False
+
+# --- MODEL & HARDWARE ---
+MODEL:
+  IN_PLANES: 512           # SANet feature dimension
+  VGG_WEIGHTS_PATH: "../models/vgg_normalised.pth"
+  DEVICE: "cuda"
+
+# --- TRAINING CONFIG ---
+TRAINING:
+  OPTIMIZER: "Adam"
+  LEARNING_RATE: 1e-4
+  LR_DECAY: 5e-5
+  MAX_ITER: 160000
+  
+  LOSS:
+    CONTENT_WEIGHT: 1.0
+    STYLE_WEIGHT: 3.0
+    IDENTITY_WEIGHT_1: 50.0
+    IDENTITY_WEIGHT_2: 1.0
+  
+  CHECKPOINT:
+    SAVE_INTERVAL: 5000
+    LOG_INTERVAL: 1000
+    PATIENCE: 999999       # Disabled early stopping
+  
+  SAVE_DIR: "../checkpoints_sanet"
+
+# --- TESTING CONFIG ---
+TESTING:
+  DECODER_PATH: "../checkpoints_sanet/decoder_best.pth"
+  TRANSFORM_PATH: "../checkpoints_sanet/transformer_best.pth"
+  SAVE_DIR: "../results"
+  CONTENT_TEST_DIR: "../data/coco2017/val2017"
+  STYLE_TEST_DIR: "../data/wikiart_sampled/valid"
+
