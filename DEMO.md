@@ -41,6 +41,10 @@ image-style-transfer/
 │   │   │   ├── adain.onnx      # Model ONNX (Khang Hy)
 │   │   │   ├── sanet.onnx      # Model ONNX (Khang Hy)
 │   │   │   └── loader.py       # Load model vào memory (Khang Hy)
+│   │   ├── styles/
+│   │   │   ├── style_1.jpg      # Ảnh style có sẵn
+│   │   │   ├── style_2.jpg      # Ảnh style có sẵn
+│   │   │   └── style_3.jpg      # Ảnh style có sẵn
 │   │   └── schemas/
 │   │       └── image.py        # Pydantic schemas (Anh Khoa)
 │   ├── requirements.txt        # FastAPI, onnxruntime, opencv, etc.
