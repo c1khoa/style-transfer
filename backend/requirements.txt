@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+onnxruntime
+onnxruntime-directml
+opencv-python
+pillow
+python-multipart
+torch
+torchvision
+onnx
+onnxscript
+onnxruntime-gpu
