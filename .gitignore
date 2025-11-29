@@ -4,14 +4,16 @@
 .myfile/
 
 .github/
+.cursor/
 data/
+models/
 outputs/
 checkpoints/
 /Paper
 .venv
 .github
 .checkpoint
-
+*.pth
 # User-specific files
 *.rsuser
 *.suo
