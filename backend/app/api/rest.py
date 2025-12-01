@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Response
-from utils.style_utils import style_transfer_bytes
-import config, os, glob
-
+from app.utils import style_transfer_bytes
+import os, glob
+from app import config
 router = APIRouter()
 
 os.makedirs(config.STYLE_DIR, exist_ok=True)

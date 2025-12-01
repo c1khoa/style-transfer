@@ -2,9 +2,9 @@ import numpy as np
 from typing import Union
 from PIL import Image
 
-from .preprocess import preprocess_image, postprocess_tensor
-from .inference import run_inference
-from ..models.loader import load_model
+from app.services.preprocess import preprocess_image, postprocess_tensor
+from app.services.inference import run_inference
+from app.models.loader import load_model
 
 def apply_style(
     content_img: Union[np.ndarray, Image.Image],

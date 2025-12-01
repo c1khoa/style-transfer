@@ -1,13 +1,10 @@
 import onnxruntime as ort
 import os
 from typing import Optional
-
-MODEL_DIR = os.path.join(os.path.dirname(__file__))
-ADAIN_MODEL_PATH = os.path.join(MODEL_DIR, "adain.onnx")
-SANET_MODEL_PATH = os.path.join(MODEL_DIR, "sanet.onnx")
-
+from app import config 
 _sessions = {}
-
+ADAIN_MODEL_PATH = os.path.join(config.MODEL_DIR, "adain.onnx")
+SANET_MODEL_PATH = os.path.join(config.MODEL_DIR, "sanet.onnx")
 def load_model(model_name: str, providers: Optional[list] = None) -> ort.InferenceSession:
     """
     Load ONNX model vào memory và trả về InferenceSession.

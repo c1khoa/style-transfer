@@ -1,8 +1,8 @@
 import io
 from PIL import Image
 import numpy as np
-from service.style_transfer import apply_style
-import config
+from app.services.style_transfer import apply_style
+from app import config
 import os
 
 def style_transfer_bytes(
