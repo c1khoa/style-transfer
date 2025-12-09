@@ -15,8 +15,14 @@ pandas
 tqdm
 PyYAML
 fastapi
+fastapi[all]
 uvicorn
+uvicorn[standard]
 python-multipart
+websockets
+requests
+python-dotenv
+starlette
 onnx
 onnxscript
 onnxruntime

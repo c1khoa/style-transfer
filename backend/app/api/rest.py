@@ -14,14 +14,15 @@ def get_styles():
 
 @router.post("/api/style/image")
 async def style_image(
-    content_image: UploadFile = File(...),
+    content_file: UploadFile = File(...),
     style_image: UploadFile = File(None),
-    style_name: str = Form(None),
-    model_name: str = Form(...)
+    model: str = Form(...)
 ):
-    content_bytes = await content_image.read()
-    style_bytes = await style_image.read() if style_image else None
-    
-    result_bytes = style_transfer_bytes(content_bytes, style_bytes, style_name, model_name)
+    content_bytes = await content_file.read()
+    style_bytes = await style_image.read()
+    result_bytes = style_transfer_bytes(content_bytes, style_bytes, model)
 
+    # return Response(content=result_bytes, media_type="image/jpeg")
     return Response(content=result_bytes, media_type="image/jpeg")
+
+

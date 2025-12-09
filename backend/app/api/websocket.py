@@ -1,36 +1,69 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-import base64
+import cv2
+import numpy as np
 from app.utils import style_transfer_bytes
 
 router = APIRouter()
 
-@router.websocket("/ws/style")
-async def websocket_style_transfer(ws: WebSocket):
+@router.websocket("/ws/video")
+async def websocket_video(ws: WebSocket):
     await ws.accept()
+    print("Client connected")
+
+    style_bytes = None
+    model_name = "adain"
 
     try:
         while True:
-            data = await ws.receive_json()
+            message = await ws.receive()
 
-            # client gửi:
-            # { "content": "base64...", "style": "base64...", "model": "adain" }
+            if "text" in message:
+                data = message["text"]
+                import json
+                payload = json.loads(data)
 
-            content_b64 = data.get("content")
-            style_b64 = data.get("style")
-            model_name = data.get("model")
+                if "style" in payload:
+                    if payload["style"] is None:
+                        style_bytes = None
+                        print("⚪ Style cleared")
+                    else:
+                        import base64
+                        style_bytes = base64.b64decode(payload["style"])
+                        print("🔥 Style updated!")
 
-            if content_b64 is None or model_name is None:
-                await ws.send_json({"error": "Missing fields"})
+                if "model" in payload:
+                    model_name = payload["model"]
+
                 continue
 
-            content_bytes = base64.b64decode(content_b64)
-            style_bytes = base64.b64decode(style_b64) if style_b64 else None
+            if "bytes" in message:
+                frame_bytes = message["bytes"]
 
-            result = style_transfer_bytes(content_bytes, style_bytes, None, model_name)
+                np_arr = np.frombuffer(frame_bytes, np.uint8)
+                frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
 
-            result_b64 = base64.b64encode(result).decode()
+                if frame is None:
+                    print("Decode failed")
+                    continue
 
-            await ws.send_json({"result": result_b64})
+                if style_bytes is None:
+                    _, encoded = cv2.imencode(".jpg", frame)
+                    await ws.send_bytes(encoded.tobytes())
+                    continue
+
+                try:
+                    result = style_transfer_bytes(
+                        frame_bytes,
+                        style_bytes,
+                        model_name
+                    )
+                except Exception as e:
+                    print("❌ Style error:", e)
+                    _, encoded = cv2.imencode(".jpg", frame)
+                    await ws.send_bytes(encoded.tobytes())
+                    continue
+
+                await ws.send_bytes(result)
 
     except WebSocketDisconnect:
         print("Client disconnected")

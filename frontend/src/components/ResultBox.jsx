@@ -85,7 +85,6 @@ export default function ResultBox({ result, inputPreview, webcamStream, isProces
   // =============================
   const handleDownload = (e) => {
     e.stopPropagation();
-
     if (!result) return;
 
     // Tạo link download

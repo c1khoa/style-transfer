@@ -3,6 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from app.api import rest, websocket
 from app import config
 import os
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Style Transfer API")
 

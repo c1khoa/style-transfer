@@ -29,12 +29,12 @@ def preprocess_image(
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
     elif image.shape[2] == 4:
         image = cv2.cvtColor(image, cv2.COLOR_RGBA2RGB)
-    
-    h, w = image.shape[:2]
-    target_w, target_h = target_size
-    
-    if h != target_h or w != target_w:
-        image = cv2.resize(image, (target_w, target_h), interpolation=cv2.INTER_AREA)
+    if target_size is not None:
+        h, w = image.shape[:2]
+        target_w, target_h = target_size
+        
+        if h != target_h or w != target_w:
+            image = cv2.resize(image, (target_w, target_h), interpolation=cv2.INTER_AREA)
     
     image = image.astype(np.float32) / 255.0
     

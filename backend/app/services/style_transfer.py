@@ -32,7 +32,7 @@ def apply_style(
     session = load_model(model_name)
     
     normalize = (model_name == "adain")
-    content_tensor = preprocess_image(content_img, target_size=target_size, normalize=normalize)
+    content_tensor = preprocess_image(content_img, target_size=None, normalize=normalize)
     style_tensor = preprocess_image(style_img, target_size=target_size, normalize=normalize)
     
     output_tensor = run_inference(
