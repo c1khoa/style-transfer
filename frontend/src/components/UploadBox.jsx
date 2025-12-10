@@ -15,11 +15,15 @@ export default function UploadBox({
     if (mode === "webcam") {
       onOpenWebcam();
     } else {
-      inputRef.current.click();
+      inputRef.current?.click();
     }
   };
 
-  const fileTypes = mode === "image" ? "image/png,image/jpeg" : mode === "video" ? "video/mp4,video/mkv,video/avi" : "";
+  const fileTypes = mode === "image" 
+    ? "image/png,image/jpeg" 
+    : mode === "video" 
+    ? "video/mp4,video/mkv,video/avi" 
+    : "";
 
   useEffect(() => {
     if (mode === "webcam" && videoRef.current && webcamStream) {
@@ -78,13 +82,18 @@ export default function UploadBox({
     wrapper.onclick = () => wrapper.remove();
   };
 
-  // ⭐ Kiểm tra xem có content hay không
   const hasContent = inputData || webcamStream;
 
   return (
     <div className={`upload-box ${!hasContent ? "empty" : ""}`} onClick={handleClick}>
-      {(inputData || webcamStream) && (
-        <button className="close-btn" onClick={(e) => { e.stopPropagation(); onClear(); }}>
+      {hasContent && (
+        <button 
+          className="close-btn" 
+          onClick={(e) => { 
+            e.stopPropagation(); 
+            onClear(); 
+          }}
+        >
           ✕
         </button>
       )}
@@ -97,12 +106,10 @@ export default function UploadBox({
         <video className="preview-video" src={inputData} controls />
       )}
 
-      {/* ⭐ CHỈ render video khi có webcamStream */}
       {mode === "webcam" && webcamStream && (
-        <video className="preview-video" autoPlay ref={videoRef} />
+        <video className="preview-video" autoPlay muted ref={videoRef} />
       )}
 
-      {/* ⭐ Chỉ hiển thị text khi KHÔNG có content */}
       {!hasContent && mode !== "webcam" && (
         <div className="text-block">
           <h2 className="title">Content</h2>
@@ -118,10 +125,16 @@ export default function UploadBox({
       )}
 
       {mode !== "webcam" && (
-        <input ref={inputRef} type="file" accept={fileTypes} style={{ display: "none" }} onChange={(e) => onUpload(e.target.files[0])} />
+        <input 
+          ref={inputRef} 
+          type="file" 
+          accept={fileTypes} 
+          style={{ display: "none" }} 
+          onChange={(e) => onUpload(e.target.files[0])} 
+        />
       )}
 
-      {(inputData || webcamStream) && (
+      {hasContent && (
         <button className="fullscreen-btn" onClick={openFullscreen}>
           ⤢
         </button>

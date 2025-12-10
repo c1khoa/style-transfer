@@ -5,7 +5,6 @@ import ModelSelector from "./components/ModelSelector";
 import UploadBox from "./components/UploadBox";
 import StyleBox from "./components/StyleBox";
 import ResultBox from "./components/ResultBox";
-import Webcam from "./components/WebcamCanvas";
 
 import "./App.css";
 
@@ -14,12 +13,12 @@ function App() {
   const [model, setModel] = useState("adain");
 
   const [inputData, setInputData] = useState(null);
-  const [inputFile, setInputFile] = useState(null); // ⭐ Lưu file gốc
+  const [inputFile, setInputFile] = useState(null);
   const [styleImage, setStyleImage] = useState(null);
-  const [styleFile, setStyleFile] = useState(null); // ⭐ Lưu file style gốc
+  const [styleFile, setStyleFile] = useState(null);
   const [result, setResult] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState(""); // ⭐ trạng thái tiến trình
+  const [progress, setProgress] = useState("");
 
   const [webcamStream, setWebcamStream] = useState(null);
   const wsRef = useRef(null);
@@ -28,11 +27,18 @@ function App() {
   // Reset khi đổi chế độ
   useEffect(() => {
     setInputData(null);
+    setInputFile(null);
+    setResult(null);
     setProgress("");
+    setIsProcessing(false);
+    
+    // Dừng webcam stream nếu có
     if (webcamStream) {
       webcamStream.getTracks().forEach((t) => t.stop());
       setWebcamStream(null);
     }
+    
+    // Đóng WebSocket nếu có
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
@@ -64,10 +70,12 @@ function App() {
 
   const startWebcam = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: true, 
+        audio: false 
+      });
       setWebcamStream(stream);
       setInputData(null);
-      if (videoRef.current) videoRef.current.srcObject = stream;
     } catch (err) {
       alert("Không thể mở webcam: " + err.message);
     }
@@ -76,21 +84,22 @@ function App() {
   const handleClear = () => {
     setInputData(null);
     setInputFile(null);
+    setResult(null);
     setProgress("");
+    
     if (webcamStream) {
       webcamStream.getTracks().forEach((t) => t.stop());
       setWebcamStream(null);
     }
+    
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
     }
-    setResult(null);
+    
+    setIsProcessing(false);
   };
 
-  // ============================
-  // ⭐ START PROCESSING
-  // ============================
   const handleStart = async () => {
     if (!inputData && !webcamStream) {
       alert("Please upload an image/video or open webcam first!");
@@ -107,35 +116,43 @@ function App() {
 
     try {
       if (mode === "image") {
-        // ===== Image POST request như trước =====
+        // Image processing
         const formData = new FormData();
         formData.append("model", model);
 
-        // Content file
         let contentBlob = null;
-        let contentFileName = "content.jpg";
-        if (inputData) {
+        if (inputFile) {
+          contentBlob = inputFile;
+        } else if (inputData) {
           const response = await fetch(inputData);
           contentBlob = await response.blob();
         }
-        formData.append("content_file", contentBlob, contentFileName);
+        formData.append("content_file", contentBlob, "content.jpg");
 
-        // Style file
         let styleBlob = styleFile ? styleFile : await (await fetch(styleImage)).blob();
         formData.append("style_image", styleBlob, "style.jpg");
 
-        const apiResponse = await fetch("/api/style/image", { method: "POST", body: formData });
+        setProgress("Processing image...");
+        const apiResponse = await fetch("/api/style/image", { 
+          method: "POST", 
+          body: formData 
+        });
+        
         if (!apiResponse.ok) throw new Error("API request failed");
+        
         const resultBlob = await apiResponse.blob();
         setResult(URL.createObjectURL(resultBlob));
+        setProgress("Done!");
+        setIsProcessing(false);
+        
       } else if (mode === "webcam" || mode === "video") {
-        // ===== WebSocket streaming =====
+        // WebSocket streaming
         setProgress("Connecting to WebSocket...");
-        wsRef.current = new WebSocket("/ws/video");
+        wsRef.current = new WebSocket("ws://localhost:8000/ws/video");
 
         wsRef.current.onopen = () => {
           console.log("WebSocket connected");
-          setProgress("Streaming webcam frames...");
+          setProgress("Streaming frames...");
         };
 
         wsRef.current.onmessage = (event) => {
@@ -151,114 +168,125 @@ function App() {
 
         wsRef.current.onclose = () => {
           console.log("WebSocket closed");
-          setProgress("WebSocket closed");
+          setProgress("Connection closed");
+          setIsProcessing(false);
         };
 
-        // Gửi frame liên tục
+        // Send frames continuously
         const sendFrame = () => {
-          if (!videoRef.current || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-          const canvas = document.createElement("canvas");
-          canvas.width = videoRef.current.videoWidth;
-          canvas.height = videoRef.current.videoHeight;
-          canvas.getContext("2d").drawImage(videoRef.current, 0, 0);
-          canvas.toBlob((blob) => {
-            if (blob && wsRef.current.readyState === WebSocket.OPEN) wsRef.current.send(blob);
-          }, "image/jpeg");
-          // Bật webcam nếu chưa bật
-          if (!videoRef.current.srcObject) {
-            navigator.mediaDevices.getUserMedia({ video: true })
-              .then(stream => {
-                videoRef.current.srcObject = stream;
-                videoRef.current.play();
-              })
-              .catch(err => {
-                console.error("Lỗi mở webcam:", err);
-                setProgress("Không thể mở webcam");
-              });
+          if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+            return;
+          }
+
+          let videoElement = null;
+          
+          // Lấy video element từ webcam hoặc uploaded video
+          if (mode === "webcam" && webcamStream) {
+            // Tìm video element trong UploadBox
+            const uploadBox = document.querySelector('.upload-box video');
+            if (uploadBox && uploadBox.videoWidth > 0) {
+              videoElement = uploadBox;
+            }
+          } else if (mode === "video" && inputData) {
+            const uploadBox = document.querySelector('.upload-box video');
+            if (uploadBox && uploadBox.videoWidth > 0) {
+              videoElement = uploadBox;
+            }
+          }
+
+          if (videoElement) {
+            const canvas = document.createElement("canvas");
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            canvas.getContext("2d").drawImage(videoElement, 0, 0);
+            
+            canvas.toBlob((blob) => {
+              if (blob && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                wsRef.current.send(blob);
+              }
+            }, "image/jpeg", 0.8);
           }
 
           if (wsRef.current.readyState === WebSocket.OPEN) {
             requestAnimationFrame(sendFrame);
           }
         };
-        requestAnimationFrame(sendFrame);
+        
+        // Đợi một chút để video element sẵn sàng
+        setTimeout(() => {
+          requestAnimationFrame(sendFrame);
+        }, 500);
       }
     } catch (error) {
       console.error("Error processing:", error);
-      setProgress("Error occurred");
+      setProgress("Error occurred: " + error.message);
       alert("Failed to process: " + error.message);
-      setTimeout(() => setResult(styleImage), 2000);
-    } finally {
-      setIsProcessing(mode === "image" ? false : true); // với webcam/video giữ WS mở
+      setIsProcessing(false);
     }
   };
 
   return (
-  <>
-    <Header />
-    <div className="content">
-      <div className="top-buttons">
-        <ModelSelector onSelect={setModel} />
-        <ModeSelector onChange={setMode} />
-      </div>
+    <>
+      <Header />
+      <div className="content">
+        <div className="top-buttons">
+          <ModelSelector onSelect={setModel} />
+          <ModeSelector onChange={setMode} />
+        </div>
 
-      <div className="three-boxes">
-        {/* Content / Webcam Box */}
-        <div className="box-with-label">
-          {mode === "image" ? (
+        <div className="three-boxes">
+          {/* Content Box - Dùng chung UploadBox cho cả 3 mode */}
+          <div className="box-with-label">
             <UploadBox
               mode={mode}
               inputData={inputData}
-              onUpload={handleUpload}
-              onClear={handleClear}
-            />
-          ) : (
-            <Webcam
-              videoRef={videoRef}
               webcamStream={webcamStream}
-              onStart={startWebcam}
+              onUpload={handleUpload}
+              onOpenWebcam={startWebcam}
               onClear={handleClear}
             />
-          )}
-          <p className="box-label">
-            {mode === "image" ? "Content Image" : "Webcam Input"}
-          </p>
+            <p className="box-label">
+              {mode === "image" ? "Content Image" : mode === "video" ? "Content Video" : "Webcam Input"}
+            </p>
+          </div>
+
+          {/* Style Box */}
+          <div className="box-with-label">
+            <StyleBox 
+              styleImage={styleImage} 
+              onUploadStyle={handleStyleUpload} 
+            />
+            <p className="box-label">Style Image</p>
+          </div>
+
+          {/* Result Box */}
+          <div className="box-with-label">
+            <ResultBox
+              result={result}
+              inputPreview={inputData}
+              webcamStream={webcamStream}
+              isProcessing={isProcessing}
+            />
+            <p className="box-label">
+              {mode === "image" ? "Result Image" : "Result Frame"}
+            </p>
+          </div>
         </div>
 
-        {/* Style Box */}
-        <div className="box-with-label">
-          <StyleBox styleImage={styleImage} onUploadStyle={handleStyleUpload} />
-          <p className="box-label">Style Image</p>
-        </div>
-
-        {/* Result Box */}
-        <div className="box-with-label">
-          <ResultBox
-            result={result}
-            inputPreview={inputData}
-            webcamStream={webcamStream}
-            isProcessing={isProcessing}
-          />
-          <p className="box-label">
-            {mode === "image" ? "Result Image" : "Result Video Frame"}
-          </p>
+        {/* Start Button */}
+        <div className="start-button-wrapper">
+          <button
+            className={`start-btn ${isProcessing ? "processing" : ""}`}
+            onClick={handleStart}
+            disabled={isProcessing && mode === "image"}
+          >
+            {isProcessing ? "Processing..." : "Start"}
+          </button>
+          {progress && <div className="progress">{progress}</div>}
         </div>
       </div>
-
-      {/* Start Button */}
-      <div className="start-button-wrapper">
-        <button
-          className={`start-btn ${isProcessing ? "processing" : ""}`}
-          onClick={handleStart}
-          disabled={isProcessing && mode === "image"} // giữ WS mở cho webcam/video
-        >
-          Start
-        </button>
-        <div className="progress">{progress}</div>
-      </div>
-    </div>
-  </>
-);
+    </>
+  );
 }
 
 export default App;
