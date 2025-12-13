@@ -19,7 +19,7 @@ export default function WebcamCanvas() {
     img.src = url;
   };
 
-  const wsRef = useWebcamWebSocket("ws://localhost:8000/ws/video", handleFrame);
+  const wsRef = useWebcamWebSocket("/ws/video", handleFrame);
 
   // Start webcam (đã fix)
   const startWebcam = async () => {

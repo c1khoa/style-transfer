@@ -1,69 +1,101 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, UploadFile, File
 import cv2
 import numpy as np
-from app.utils import style_transfer_bytes
+import asyncio
+import time
+from app.utils import style_transfer_bytes  
 
 router = APIRouter()
 
+processing = False
+latest_frame = None
+CURRENT_STYLE_IMAGE = None
+CURRENT_MODEL_NAME = "adain"
+FRAME_INTERVAL = 1 / 2     # xử lý tối đa 5 FPS
+last_frame_time = 0
+
+
+@router.post("/ws/set")
+async def set_style(style_image: UploadFile = File(...), model: str = "adain"):
+    global CURRENT_STYLE_IMAGE, CURRENT_MODEL_NAME
+
+    bytes_data = await style_image.read()
+
+    img_np = np.frombuffer(bytes_data, np.uint8)
+    CURRENT_STYLE_IMAGE = cv2.imdecode(img_np, cv2.IMREAD_COLOR)
+    CURRENT_MODEL_NAME = model
+
+    return {"ok": True}
+
+
 @router.websocket("/ws/video")
 async def websocket_video(ws: WebSocket):
-    await ws.accept()
-    print("Client connected")
+    global processing, latest_frame, last_frame_time
+    processing = False
+    latest_frame = None
+    last_frame_time = 0
 
-    style_bytes = None
-    model_name = "adain"
+    await ws.accept()
+    print("🔌 WebSocket connected")
+
+    async def process_loop():
+        """Process newest frame only, skip old frames."""
+        global processing, latest_frame
+
+        if processing:
+            return
+
+        processing = True
+
+        while latest_frame is not None:
+            frame_bytes = latest_frame
+            latest_frame = None
+
+            # Decode content frame
+            np_arr = np.frombuffer(frame_bytes, np.uint8)
+            content_np = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+            if content_np is None:
+                print("❌ decode content failed")
+                processing = False
+                return
+
+            # Encode style image
+            ok, style_buf = cv2.imencode(".jpg", CURRENT_STYLE_IMAGE)
+            style_bytes = style_buf.tobytes()
+
+            # Encode content
+            ok, content_buf = cv2.imencode(".jpg", content_np)
+            content_bytes = content_buf.tobytes()
+
+            # Apply style transfer
+            try:
+                output_bytes = style_transfer_bytes(
+                    content_bytes=content_bytes,
+                    style_bytes=style_bytes,
+                    model_name=CURRENT_MODEL_NAME
+                )
+            except Exception as e:
+                print("❌ Style transfer error:", e)
+                processing = False
+                return
+
+            await ws.send_bytes(output_bytes)
+
+        processing = False
 
     try:
         while True:
-            message = await ws.receive()
+            frame_bytes = await ws.receive_bytes()
 
-            if "text" in message:
-                data = message["text"]
-                import json
-                payload = json.loads(data)
+            # ==== FPS LIMIT HERE ====
+            now = time.time()
+            if now - last_frame_time < FRAME_INTERVAL:
+                continue  # skip frame (too soon)
+            last_frame_time = now
+            # =========================
 
-                if "style" in payload:
-                    if payload["style"] is None:
-                        style_bytes = None
-                        print("⚪ Style cleared")
-                    else:
-                        import base64
-                        style_bytes = base64.b64decode(payload["style"])
-                        print("🔥 Style updated!")
-
-                if "model" in payload:
-                    model_name = payload["model"]
-
-                continue
-
-            if "bytes" in message:
-                frame_bytes = message["bytes"]
-
-                np_arr = np.frombuffer(frame_bytes, np.uint8)
-                frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-
-                if frame is None:
-                    print("Decode failed")
-                    continue
-
-                if style_bytes is None:
-                    _, encoded = cv2.imencode(".jpg", frame)
-                    await ws.send_bytes(encoded.tobytes())
-                    continue
-
-                try:
-                    result = style_transfer_bytes(
-                        frame_bytes,
-                        style_bytes,
-                        model_name
-                    )
-                except Exception as e:
-                    print("❌ Style error:", e)
-                    _, encoded = cv2.imencode(".jpg", frame)
-                    await ws.send_bytes(encoded.tobytes())
-                    continue
-
-                await ws.send_bytes(result)
+            latest_frame = frame_bytes
+            asyncio.create_task(process_loop())
 
     except WebSocketDisconnect:
-        print("Client disconnected")
+        print("🔌 WebSocket closed")

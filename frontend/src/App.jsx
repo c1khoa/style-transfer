@@ -146,10 +146,18 @@ function App() {
         setIsProcessing(false);
         
       } else if (mode === "webcam" || mode === "video") {
+        setIsProcessing(false);
+        setProgress("Preparing style...");
+        const fd = new FormData();
+        let styleBlob = styleFile ? styleFile : await (await fetch(styleImage)).blob();
+        fd.append("style_image", styleBlob);
+
+        fd.append("model", model);
+        await fetch("/ws/set", { method: "POST", body: fd });
         // WebSocket streaming
         setProgress("Connecting to WebSocket...");
-        wsRef.current = new WebSocket("ws://localhost:8000/ws/video");
-
+        wsRef.current = new WebSocket("/ws/video");
+        wsRef.current.binaryType = "arraybuffer";
         wsRef.current.onopen = () => {
           console.log("WebSocket connected");
           setProgress("Streaming frames...");
@@ -196,9 +204,15 @@ function App() {
 
           if (videoElement) {
             const canvas = document.createElement("canvas");
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
-            canvas.getContext("2d").drawImage(videoElement, 0, 0);
+            // Giảm độ phân giải theo tỷ lệ
+            const TARGET_W = 240;      // hoặc 360, 512, 640 tùy bạn
+            const aspect = videoElement.videoHeight / videoElement.videoWidth;
+
+            canvas.width = TARGET_W;
+            canvas.height = TARGET_W * aspect;
+
+            canvas.getContext("2d").drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
             
             canvas.toBlob((blob) => {
               if (blob && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
