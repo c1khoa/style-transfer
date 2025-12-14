@@ -5,6 +5,7 @@ import ModelSelector from "./components/ModelSelector";
 import UploadBox from "./components/UploadBox";
 import StyleBox from "./components/StyleBox";
 import ResultBox from "./components/ResultBox";
+import StatusBar from "./components/StatusBar"
 
 import "./App.css";
 
@@ -280,6 +281,7 @@ function App() {
               inputPreview={inputData}
               webcamStream={webcamStream}
               isProcessing={isProcessing}
+              mode={mode}  
             />
             <p className="box-label">
               {mode === "image" ? "Result Image" : "Result Frame"}
@@ -296,9 +298,10 @@ function App() {
           >
             {isProcessing ? "Processing..." : "Start"}
           </button>
-          {progress && <div className="progress">{progress}</div>}
+          {/* {progress && <div className="progress">{progress}</div>} */}
         </div>
       </div>
+      <StatusBar progress={progress} />
     </>
   );
 }

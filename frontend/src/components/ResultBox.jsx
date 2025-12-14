@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 
-export default function ResultBox({ result, inputPreview, webcamStream, isProcessing }) {
+export default function ResultBox({ result, inputPreview, webcamStream, isProcessing, mode }) {
   const videoRef = useRef(null);
 
   // Gán stream vào webcam video nếu có
@@ -103,12 +103,15 @@ export default function ResultBox({ result, inputPreview, webcamStream, isProces
 
   // ⭐ Kiểm tra có result hay không
   const hasResult = result && !isProcessing;
+  
+  // ⭐ Kiểm tra có hiển thị nút hay không (chỉ hiện với mode image)
+  const showButtons = mode === "image";
 
   return (
     <div className={`upload-box ${!hasResult && !isProcessing ? "empty" : ""}`}>
       
-      {/* DOWNLOAD BUTTON - chỉ hiện khi có result */}
-      {result && !isProcessing && (
+      {/* DOWNLOAD BUTTON - chỉ hiện khi có result VÀ mode là image */}
+      {result && !isProcessing && showButtons && (
         <button
           className="download-btn"
           onClick={handleDownload}
@@ -165,8 +168,8 @@ export default function ResultBox({ result, inputPreview, webcamStream, isProces
         </div>
       )}
 
-      {/* FULLSCREEN BUTTON - chỉ hiện khi có result và không processing */}
-      {result && !isProcessing && (
+      {/* FULLSCREEN BUTTON - chỉ hiện khi có result, không processing VÀ mode là image */}
+      {result && !isProcessing && showButtons && (
         <button
           className="fullscreen-btn"
           onClick={openFullscreen}

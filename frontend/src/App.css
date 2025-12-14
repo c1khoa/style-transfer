@@ -3,6 +3,61 @@
 
    
 /*=========================== */
+.status-bar {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #000000;
+  color: #00ff00;
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: 1px solid #00ff00;
+  box-shadow: 0 4px 12px rgba(0, 255, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 9999;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.status-icon {
+  color: #00ff00;
+  font-size: 20px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.status-text {
+  letter-spacing: 0.5px;
+}
+
+.status-bar:hover {
+  box-shadow: 0 6px 16px rgba(0, 255, 0, 0.3);
+  transform: translateY(-2px);
+  transition: all 0.2s ease;
+}
 
 .header {
   height: 15vh;
