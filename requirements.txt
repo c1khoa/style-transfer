@@ -25,6 +25,6 @@ python-dotenv
 starlette
 onnx
 onnxscript
-onnxruntime
-onnxruntime-directml
-onnxruntime-gpu
+# onnxruntime
+# onnxruntime-directml
+# onnxruntime-gpu

@@ -130,8 +130,8 @@ The Image Style Transfer project successfully builds an automated and effective 
 
 ```bash
 git clone https://github.com/c1khoa/style-transfer
-cd backend
 pip install -r requirements.txt
+cd backend
 uvicorn app.main:app --reload --host localhost --port 8000
 ```
 
